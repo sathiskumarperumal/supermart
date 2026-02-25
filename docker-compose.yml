@@ -1,0 +1,109 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Supermart IoT – Local Development Environment
+# Two containers: MySQL DB  +  Spring Boot API
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# Quick-start commands:
+#   docker compose up --build        Build images and start all services
+#   docker compose up -d --build     Start detached (background)
+#   docker compose logs -f           Tail logs from all services
+#   docker compose logs -f supermart-iot-api   Tail API logs only
+#   docker compose down              Stop and remove containers
+#   docker compose down -v           Stop, remove containers + named volume (wipes DB)
+#
+# Useful URLs once running:
+#   REST API    →  http://localhost:8080/api
+#   Swagger UI  →  http://localhost:8080/api/swagger-ui.html
+#   Health      →  http://localhost:8080/api/actuator/health
+#   MySQL       →  localhost:3306  (user: supermart / pass: supermart_pass)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ─── MySQL 8 Database ────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.3
+    container_name: supermart-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass          # root password (internal use only)
+      MYSQL_DATABASE:      supermartdb        # auto-creates this database on first boot
+      MYSQL_USER:          supermart          # application user
+      MYSQL_PASSWORD:      supermart_pass     # application user password
+
+    ports:
+      - "3306:3306"                           # expose to host for DB tools (TablePlus, DBeaver, etc.)
+
+    volumes:
+      # Named volume – persists data across container restarts.
+      # Run 'docker compose down -v' to wipe and reseed from scratch.
+      - mysql_data:/var/lib/mysql
+
+      # Init scripts – run once on first container creation (alphabetical order).
+      # 01_schema.sql  → creates all tables
+      # 02_data.sql    → inserts seed data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+      # Waits until MySQL is fully accepting connections before the API starts.
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "supermart", "--password=supermart_pass", "--silent"]
+      interval: 10s        # probe every 10 s
+      timeout: 5s          # fail probe if no response in 5 s
+      retries: 6           # mark unhealthy after 6 consecutive failures (~1 min)
+      start_period: 30s    # grace period for MySQL to initialise
+
+    restart: unless-stopped
+
+  # ─── Supermart IoT API ───────────────────────────────────────────────────────
+  supermart-iot-api:
+    build:
+      context: ./supermart-iot          # directory containing the Dockerfile
+      dockerfile: Dockerfile
+    image: supermart-iot-api:local
+    container_name: supermart-iot-api
+
+    # Do NOT start the API until MySQL is healthy (passes its health-check).
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # Activate the 'docker' Spring profile (application-docker.properties)
+      SPRING_PROFILES_ACTIVE: docker
+
+      # ── DataSource – override in application-docker.properties ─────────────
+      # 'mysql' is the Docker service name and resolves inside the compose network.
+      SPRING_DATASOURCE_URL:      "jdbc:mysql://mysql:3306/supermartdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: supermart
+      SPRING_DATASOURCE_PASSWORD: supermart_pass
+
+      # ── JWT ────────────────────────────────────────────────────────────────
+      # IMPORTANT: replace with a strong random secret in production
+      APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      APP_JWT_ACCESS_TOKEN_EXPIRATION_MS:  3600000    # 1 hour
+      APP_JWT_REFRESH_TOKEN_EXPIRATION_MS: 86400000   # 24 hours
+
+      # ── Telemetry ──────────────────────────────────────────────────────────
+      APP_TELEMETRY_RATE_LIMIT_PER_MINUTE: 2
+
+      # ── Logging ────────────────────────────────────────────────────────────
+      LOGGING_LEVEL_COM_SUPERMART: DEBUG
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: INFO
+
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s    # grace period while JVM warms up
+
+    restart: unless-stopped
+
+# ─── Named Volumes ─────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:
+    name: supermart_mysql_data    # visible in Docker Desktop → Volumes tab

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const bcrypt = require\\(''bcryptjs''\\); const hash = bcrypt.hashSync\\(''S3cur3P@ss!'', 12\\); console.log\\(hash\\);\")",
+      "Bash(python3 -c \"import bcrypt; print\\(bcrypt.hashpw\\(b''S3cur3P@ss!'', bcrypt.gensalt\\(12\\)\\).decode\\(\\)\\)\")"
+    ]
+  }
+}
