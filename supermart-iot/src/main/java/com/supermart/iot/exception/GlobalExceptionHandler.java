@@ -1,6 +1,7 @@
 package com.supermart.iot.exception;
 
 import com.supermart.iot.dto.response.ApiResponse;
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +48,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("UNAUTHORIZED", "Invalid email or password."));
+    }
+
+    // Catches all jjwt exceptions: MalformedJwtException, ExpiredJwtException,
+    // SignatureException, UnsupportedJwtException, etc.
+    // Without this handler they fall to handleGeneric() and return 500 INTERNAL_ERROR.
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiResponse<Void>> handleJwtException(JwtException ex) {
+        log.warn("JWT error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("UNAUTHORIZED", "Token is invalid or has expired. Please log in again."));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
