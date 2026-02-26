@@ -15,7 +15,7 @@
 
     <groupId>com.supermart</groupId>
     <artifactId>supermart-iot</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>2.0.0</version>
     <name>supermart-iot</name>
     <description>Supermart IoT Temperature Monitoring API</description>
     <packaging>jar</packaging>
