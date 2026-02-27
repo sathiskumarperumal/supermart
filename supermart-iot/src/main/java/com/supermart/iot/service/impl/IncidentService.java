@@ -3,14 +3,23 @@ package com.supermart.iot.service.impl;
 import com.supermart.iot.dto.request.AssignTechnicianRequest;
 import com.supermart.iot.dto.request.CreateIncidentRequest;
 import com.supermart.iot.dto.request.UpdateIncidentStatusRequest;
-import com.supermart.iot.dto.response.*;
-import com.supermart.iot.entity.*;
+import com.supermart.iot.dto.response.IncidentResponse;
+import com.supermart.iot.dto.response.IotDeviceSummaryResponse;
+import com.supermart.iot.dto.response.PagedResponse;
+import com.supermart.iot.dto.response.TechnicianAssignmentResponse;
+import com.supermart.iot.entity.Incident;
+import com.supermart.iot.entity.IotDevice;
+import com.supermart.iot.entity.Technician;
+import com.supermart.iot.entity.TechnicianAssignment;
 import com.supermart.iot.enums.IncidentStatus;
 import com.supermart.iot.enums.IncidentType;
 import com.supermart.iot.exception.BadRequestException;
 import com.supermart.iot.exception.ConflictException;
 import com.supermart.iot.exception.ResourceNotFoundException;
-import com.supermart.iot.repository.*;
+import com.supermart.iot.repository.IncidentRepository;
+import com.supermart.iot.repository.IotDeviceRepository;
+import com.supermart.iot.repository.TechnicianAssignmentRepository;
+import com.supermart.iot.repository.TechnicianRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +39,9 @@ public class IncidentService {
     private final TechnicianRepository technicianRepository;
     private final TechnicianAssignmentRepository assignmentRepository;
     private final DeviceService deviceService;
+    private final TechnicianService technicianService;
 
+    @Transactional(readOnly = true)
     public PagedResponse<IncidentResponse> listIncidents(IncidentStatus status, Long storeId,
                                                           IncidentType type, int page, int size) {
         Page<Incident> incidentPage = incidentRepository.findByFilters(
@@ -65,6 +75,7 @@ public class IncidentService {
         return toResponse(incidentRepository.save(incident), false);
     }
 
+    @Transactional(readOnly = true)
     public IncidentResponse getIncidentById(Long incidentId) {
         return toResponse(findOrThrow(incidentId), true);
     }
@@ -122,8 +133,9 @@ public class IncidentService {
         if (includeAssignments && incident.getAssignments() != null) {
             assignments = incident.getAssignments().stream()
                     .map(a -> toAssignmentResponse(a, incident.getIncidentId()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
+        IotDeviceSummaryResponse deviceSummary = deviceService.toSummaryResponse(incident.getDevice());
         return IncidentResponse.builder()
                 .incidentId(incident.getIncidentId())
                 .deviceId(incident.getDevice().getDeviceId())
@@ -132,7 +144,7 @@ public class IncidentService {
                 .description(incident.getDescription())
                 .createdAt(incident.getCreatedAt())
                 .resolvedAt(incident.getResolvedAt())
-                .device(deviceService.toSummaryResponse(incident.getDevice()))
+                .device(deviceSummary)
                 .assignments(assignments)
                 .build();
     }
@@ -141,19 +153,9 @@ public class IncidentService {
         return TechnicianAssignmentResponse.builder()
                 .assignmentId(assignment.getAssignmentId())
                 .incidentId(incidentId)
-                .technician(toTechnicianResponse(assignment.getTechnician()))
+                .technician(technicianService.toTechnicianResponse(assignment.getTechnician()))
                 .assignedAt(assignment.getAssignedAt())
                 .notes(assignment.getNotes())
-                .build();
-    }
-
-    private TechnicianResponse toTechnicianResponse(Technician t) {
-        return TechnicianResponse.builder()
-                .technicianId(t.getTechnicianId())
-                .fullName(t.getFullName())
-                .email(t.getEmail())
-                .phone(t.getPhone())
-                .region(t.getRegion())
                 .build();
     }
 }

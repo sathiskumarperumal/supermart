@@ -1,9 +1,14 @@
 package com.supermart.iot.service.impl;
 
-import com.supermart.iot.dto.response.*;
+import com.supermart.iot.dto.response.EquipmentUnitResponse;
+import com.supermart.iot.dto.response.IotDeviceResponse;
+import com.supermart.iot.dto.response.IotDeviceSummaryResponse;
+import com.supermart.iot.dto.response.PagedResponse;
+import com.supermart.iot.dto.response.TelemetryResponse;
 import com.supermart.iot.entity.IotDevice;
 import com.supermart.iot.entity.TelemetryRecord;
 import com.supermart.iot.enums.DeviceStatus;
+import com.supermart.iot.exception.BadRequestException;
 import com.supermart.iot.exception.ResourceNotFoundException;
 import com.supermart.iot.repository.IotDeviceRepository;
 import com.supermart.iot.repository.TelemetryRepository;
@@ -11,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -22,20 +28,23 @@ public class DeviceService {
     private final IotDeviceRepository deviceRepository;
     private final TelemetryRepository telemetryRepository;
 
+    @Transactional(readOnly = true)
     public PagedResponse<IotDeviceSummaryResponse> listDevices(Long storeId, DeviceStatus status, int page, int size) {
         Page<IotDevice> devicePage = deviceRepository.findByStoreIdAndStatus(storeId, status, PageRequest.of(page, size));
         return PagedResponse.of(devicePage.map(this::toSummaryResponse));
     }
 
+    @Transactional(readOnly = true)
     public IotDeviceResponse getDeviceById(Long deviceId) {
         IotDevice device = findDeviceOrThrow(deviceId);
         return toDetailResponse(device);
     }
 
+    @Transactional(readOnly = true)
     public PagedResponse<TelemetryResponse> getDeviceTelemetry(Long deviceId, LocalDateTime from, LocalDateTime to, int page, int size) {
         findDeviceOrThrow(deviceId);
         if (from != null && to != null && from.isAfter(to)) {
-            throw new com.supermart.iot.exception.BadRequestException("'from' date must be before 'to' date.");
+            throw new BadRequestException("'from' date must be before 'to' date.");
         }
         Page<TelemetryRecord> records = telemetryRepository.findByDeviceIdAndDateRange(deviceId, from, to, PageRequest.of(page, size));
         return PagedResponse.of(records.map(this::toTelemetryResponse));

@@ -17,10 +17,10 @@ public class TechnicianService {
     public PagedResponse<TechnicianResponse> listTechnicians(String region, String search, int page, int size) {
         return PagedResponse.of(
                 technicianRepository.findByRegionAndSearch(region, search, PageRequest.of(page, size))
-                        .map(this::toResponse));
+                        .map(this::toTechnicianResponse));
     }
 
-    private TechnicianResponse toResponse(Technician t) {
+    public TechnicianResponse toTechnicianResponse(Technician t) {
         return TechnicianResponse.builder()
                 .technicianId(t.getTechnicianId())
                 .fullName(t.getFullName())

@@ -46,8 +46,9 @@ public class TelemetryService {
         long recentCount = telemetryRepository.countByDevice_DeviceIdAndRecordedAtAfter(
                 device.getDeviceId(), oneMinuteAgo);
         if (recentCount >= rateLimitPerMinute) {
-            throw new RateLimitException("Device " + device.getDeviceId() +
-                    " has exceeded the telemetry submission rate limit. Max " + rateLimitPerMinute + " requests per minute.");
+            throw new RateLimitException(String.format(
+                    "Device %s has exceeded the telemetry submission rate limit. Max %d requests per minute.",
+                    device.getDeviceId(), rateLimitPerMinute));
         }
 
         // Evaluate threshold

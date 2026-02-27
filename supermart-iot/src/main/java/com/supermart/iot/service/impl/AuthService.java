@@ -6,6 +6,7 @@ import com.supermart.iot.dto.response.LoginResponse;
 import com.supermart.iot.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,7 +32,7 @@ public class AuthService {
         String email = jwtService.extractEmail(request.getRefreshToken());
         UserDetails user = userDetailsService.loadUserByUsername(email);
         if (!jwtService.isTokenValid(request.getRefreshToken(), user)) {
-            throw new org.springframework.security.authentication.BadCredentialsException(
+            throw new BadCredentialsException(
                     "Refresh token is invalid or has expired. Please log in again.");
         }
         return buildLoginResponse(email);

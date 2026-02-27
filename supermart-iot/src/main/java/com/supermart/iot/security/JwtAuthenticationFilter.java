@@ -1,5 +1,6 @@
 package com.supermart.iot.security;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +23,8 @@ import java.io.IOException;
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
 
@@ -33,13 +36,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            final String jwt = authHeader.substring(7);
+            final String jwt = authHeader.substring(BEARER_PREFIX.length());
             final String email = jwtService.extractEmail(jwt);
 
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -52,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
             log.error("JWT authentication failed: {}", e.getMessage());
         }
 
