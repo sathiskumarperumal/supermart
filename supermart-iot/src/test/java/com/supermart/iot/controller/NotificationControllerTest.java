@@ -130,6 +130,9 @@ class NotificationControllerTest {
                 .thenThrow(new BadRequestException("phoneNumber is required when channel is SMS"));
 
         // when / then
-        // TODO: implement assertions — verify exception propagated to GlobalExceptionHandler
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> underTest.upsertPreference(userId, request))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("phoneNumber is required when channel is SMS");
+        verify(notificationService).upsertPreference(userId, request);
     }
 }
