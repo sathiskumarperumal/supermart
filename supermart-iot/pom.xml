@@ -28,6 +28,12 @@
         <!-- Pin Tomcat to fix CVE-2025-55754 (CVSS 9.6), CVE-2025-55752, CVE-2025-48989,
              CVE-2025-52520, CVE-2025-53506 — all resolved in 10.1.45 -->
         <tomcat.version>10.1.45</tomcat.version>
+        <!-- Pin Spring Framework to fix CVE-2025-41249 (Annotation Detection Vulnerability) -->
+        <spring-framework.version>6.2.11</spring-framework.version>
+        <!-- Pin Spring Security to fix CVE-2025-41248 (authorization bypass) -->
+        <spring-security.version>6.5.4</spring-security.version>
+        <!-- Pin Jackson BOM to fix GHSA-72hv-8253-57qq (DoS via Number Length Constraint Bypass) -->
+        <jackson-bom.version>2.18.6</jackson-bom.version>
     </properties>
 
     <dependencies>
