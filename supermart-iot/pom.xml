@@ -25,6 +25,9 @@
         <jjwt.version>0.12.5</jjwt.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok.version>1.18.30</lombok.version>
+        <!-- Pin Tomcat to fix CVE-2025-55754 (CVSS 9.6), CVE-2025-55752, CVE-2025-48989,
+             CVE-2025-52520, CVE-2025-53506 — all resolved in 10.1.45 -->
+        <tomcat.version>10.1.45</tomcat.version>
     </properties>
 
     <dependencies>
