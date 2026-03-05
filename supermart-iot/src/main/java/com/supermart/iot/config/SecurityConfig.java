@@ -49,6 +49,9 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/telemetry").hasRole("DEVICE")
+                // Notification preference and test endpoints — MANAGER or ADMIN only
+                .requestMatchers(HttpMethod.POST, "/notifications/test").hasRole("MANAGER")
+                .requestMatchers("/users/*/notification-preferences").hasAnyRole("MANAGER", "ADMIN")
                 .anyRequest().authenticated()
             )
             .headers(headers -> headers.frameOptions(fo -> fo.disable())) // for H2 console
