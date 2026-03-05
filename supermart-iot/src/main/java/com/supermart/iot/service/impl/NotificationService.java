@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service responsible for dispatching Email and SMS alert notifications to Store Managers
@@ -117,7 +116,7 @@ public class NotificationService {
 
         return logs.stream()
                 .map(this::toLogResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     // -------------------------------------------------------------------------
@@ -241,7 +240,7 @@ public class NotificationService {
                 .build();
         try {
             // Simulate email dispatch — replace with actual JavaMailSender call in production
-            log.info("EMAIL dispatch: to={}, subject=SuperMart Temperature Alert", emailAddress);
+            log.info("EMAIL dispatch: to={}, subject=SuperMart Temperature Alert, body={}", emailAddress, payload);
             entry.setStatus(NotificationStatus.SENT);
         } catch (Exception ex) {
             log.error("EMAIL dispatch failed: to={}, error={}", emailAddress, ex.getMessage(), ex);
@@ -273,7 +272,7 @@ public class NotificationService {
                 .build();
         try {
             // Simulate SMS dispatch — replace with actual SMS gateway call in production
-            log.info("SMS dispatch: to={}", phoneNumber);
+            log.info("SMS dispatch: to={}, body={}", phoneNumber, payload);
             entry.setStatus(NotificationStatus.SENT);
         } catch (Exception ex) {
             log.error("SMS dispatch failed: to={}, error={}", phoneNumber, ex.getMessage(), ex);
