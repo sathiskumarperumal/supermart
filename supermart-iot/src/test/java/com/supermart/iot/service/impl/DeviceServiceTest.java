@@ -168,7 +168,7 @@ class DeviceServiceTest {
         IotDevice device = buildDevice(deviceId);
         LocalDateTime from = LocalDateTime.now().minusDays(1);
         LocalDateTime to = LocalDateTime.now();
-        TelemetryRecord record = TelemetryRecord.builder()
+        TelemetryRecord telemetryRecord = TelemetryRecord.builder()
                 .telemetryId(1L)
                 .device(device)
                 .temperature(2.5)
@@ -178,7 +178,7 @@ class DeviceServiceTest {
 
         when(deviceRepository.findById(deviceId)).thenReturn(Optional.of(device));
         when(telemetryRepository.findByDeviceIdAndDateRange(eq(deviceId), eq(from), eq(to), any()))
-                .thenReturn(new PageImpl<>(List.of(record)));
+                .thenReturn(new PageImpl<>(List.of(telemetryRecord)));
 
         // when
         var result = underTest.getDeviceTelemetry(deviceId, from, to, 0, 10);
@@ -197,13 +197,13 @@ class DeviceServiceTest {
         // given
         Long deviceId = 1L;
         IotDevice device = buildDevice(deviceId);
-        TelemetryRecord record = TelemetryRecord.builder()
+        TelemetryRecord telemetryRecord = TelemetryRecord.builder()
                 .telemetryId(1L).device(device).temperature(1.5).isAlert(false).recordedAt(LocalDateTime.now()).build();
 
         when(deviceRepository.findByStoreIdAndStatus(any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(device)));
         when(telemetryRepository.findTopByDevice_DeviceIdOrderByRecordedAtDesc(deviceId))
-                .thenReturn(Optional.of(record));
+                .thenReturn(Optional.of(telemetryRecord));
 
         // when
         var result = underTest.listDevices(null, null, 0, 10);
