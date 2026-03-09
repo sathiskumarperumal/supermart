@@ -1,0 +1,190 @@
+name: IaC Deploy — Supermart IoT
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC to GCP
+
+env:
+  TF_VERSION: '1.7.5'
+  GCP_PROJECT_ID: proven-country-485607-p6
+  GCP_PROJECT_NUMBER: 766156983150
+  WIF_POOL_ID: github-wif-pool
+  WIF_PROVIDER_ID: github
+  GCP_SA_EMAIL: github-wif-sa@proven-country-485607-p6.iam.gserviceaccount.com
+  IMAGE_NAME: ${{ vars.IMAGE_NAME || 'supermart-iot-api' }}
+  GCR_HOST: ${{ vars.GCR_HOST || 'gcr.io' }}
+  REGION: us-central1
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 1: Build Docker image and push to GCR
+  # ─────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push Image — dev
+    runs-on: ubuntu-latest
+    environment: dev
+    outputs:
+      image_ref: ${{ steps.image.outputs.image_ref }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP (OIDC)
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ env.WIF_POOL_ID }}/providers/${{ env.WIF_PROVIDER_ID }}
+          service_account: ${{ env.GCP_SA_EMAIL }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 466.0.0'
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker ${{ env.GCR_HOST }} --quiet
+
+      - name: Compute image tag
+        id: image
+        run: |
+          TAG=$(echo "$GITHUB_SHA" | cut -c1-7)
+          IMAGE_REF="${{ env.GCR_HOST }}/${{ env.GCP_PROJECT_ID }}/${{ env.IMAGE_NAME }}:${TAG}"
+          echo "TAG=${TAG}" >> $GITHUB_ENV
+          echo "image_ref=${IMAGE_REF}" >> $GITHUB_OUTPUT
+
+      - name: Docker build & push
+        run: |
+          docker build -t "${{ steps.image.outputs.image_ref }}" --no-cache ./supermart-iot
+          docker push "${{ steps.image.outputs.image_ref }}"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Job 2: Terraform — dev
+  # ─────────────────────────────────────────────────────────────────────────────
+  deploy-dev:
+    name: Deploy — dev
+    runs-on: ubuntu-latest
+    environment: dev
+    needs: [build-and-push]
+
+    env:
+      TF_VAR_image: ${{ needs.build-and-push.outputs.image_ref }}
+      TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+      TF_VAR_jwt_secret: ${{ secrets.JWT_SECRET }}
+      WORKING_DIR: ./terraform/environments/dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Authenticate to GCP (OIDC)
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ env.WIF_POOL_ID }}/providers/${{ env.WIF_PROVIDER_ID }}
+          service_account: ${{ env.GCP_SA_EMAIL }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/cloud-platform
+
+      - name: Export GCP credentials for Terraform
+        run: echo "GOOGLE_OAUTH_ACCESS_TOKEN=${{ steps.auth.outputs.access_token }}" >> $GITHUB_ENV
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: '>= 466.0.0'
+
+      # Enable required APIs before Terraform runs
+      - name: Enable required GCP APIs
+        run: |
+          set -euo pipefail
+          gcloud --quiet services enable \
+            run.googleapis.com \
+            sqladmin.googleapis.com \
+            artifactregistry.googleapis.com \
+            iam.googleapis.com \
+            cloudresourcemanager.googleapis.com
+
+      # Create the GCS state bucket if it doesn't exist
+      - name: Ensure GCS Terraform state bucket exists
+        run: |
+          BUCKET="tfstate-supermart-dev"
+          if ! gcloud storage buckets describe "gs://${BUCKET}" --project="${{ env.GCP_PROJECT_ID }}" &>/dev/null; then
+            gcloud storage buckets create "gs://${BUCKET}" \
+              --project="${{ env.GCP_PROJECT_ID }}" \
+              --location=US \
+              --uniform-bucket-level-access
+            gcloud storage buckets update "gs://${BUCKET}" --versioning
+            echo "Bucket ${BUCKET} created."
+          else
+            echo "Bucket ${BUCKET} already exists."
+          fi
+
+      - name: Terraform Init
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform init -input=false
+
+      - name: Terraform Format Check
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          terraform plan -input=false -out=tfplan \
+            -var="image=${{ env.TF_VAR_image }}" \
+            -var="db_password=${{ env.TF_VAR_db_password }}" \
+            -var="jwt_secret=${{ env.TF_VAR_jwt_secret }}"
+
+      - name: Upload Plan Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-dev
+          path: ${{ env.WORKING_DIR }}/tfplan
+          retention-days: 3
+
+      - name: Terraform Apply
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform apply -input=false tfplan
+
+      - name: Show deployment URLs
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "=== Deployment Complete ==="
+          echo "Cloud Run URL: $(terraform output -raw cloud_run_url)"
+          echo "Swagger UI:    $(terraform output -raw swagger_ui_url)"
+
+      - name: Post failure summary to PR
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## IaC Deploy — dev FAILED\n\n**Job:** deploy-dev\n**Commit:** ${{ github.sha }}\n\nCheck the [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`;
+            if (context.payload.pull_request) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body
+              });
+            }
