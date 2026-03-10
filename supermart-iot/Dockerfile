@@ -22,7 +22,7 @@ FROM eclipse-temurin:21-jre-jammy AS runtime
 
 LABEL maintainer="Supermart IoT Team"
 LABEL application="supermart-iot-api"
-LABEL version="1.0.0"
+LABEL version="2.0.0"
 
 WORKDIR /app
 

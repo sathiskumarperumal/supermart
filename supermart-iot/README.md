@@ -179,7 +179,7 @@ Key properties in `application.properties`:
 
 ```properties
 app.jwt.secret=...                          # Base64 HMAC-SHA key
-app.jwt.access-token-expiration-ms=3600000  # 1 hour
+app.jwt.access-token-expiration-ms=1800000  # 30 minutes
 app.jwt.refresh-token-expiration-ms=86400000 # 24 hours
 app.telemetry.rate-limit-per-minute=2
 ```
