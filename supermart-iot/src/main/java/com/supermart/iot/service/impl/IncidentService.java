@@ -22,6 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Service for managing IoT incidents including creation, status updates,
+ * and technician assignments. Triggers notification dispatch for DEVICE_FAULT incidents (AC-4).
+ */
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
@@ -31,6 +35,7 @@ public class IncidentService {
     private final TechnicianRepository technicianRepository;
     private final TechnicianAssignmentRepository assignmentRepository;
     private final DeviceService deviceService;
+    private final NotificationService notificationService;
 
     public PagedResponse<IncidentResponse> listIncidents(IncidentStatus status, Long storeId,
                                                           IncidentType type, int page, int size) {
@@ -39,6 +44,17 @@ public class IncidentService {
         return PagedResponse.of(incidentPage.map(i -> toResponse(i, false)));
     }
 
+    /**
+     * Manually creates a new incident for an IoT device.
+     *
+     * <p>For DEVICE_FAULT incidents, an automated notification is dispatched to all
+     * configured Store Managers immediately after creation (AC-4).
+     *
+     * @param request the incident creation request containing deviceId, type, and description
+     * @return the created {@link IncidentResponse}
+     * @throws ResourceNotFoundException if the device is not found
+     * @throws ConflictException         if an open incident already exists for the device
+     */
     @Transactional
     public IncidentResponse createIncident(CreateIncidentRequest request) {
         IotDevice device = deviceRepository.findById(request.getDeviceId())
@@ -62,7 +78,14 @@ public class IncidentService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return toResponse(incidentRepository.save(incident), false);
+        incident = incidentRepository.save(incident);
+
+        // AC-4: Dispatch notification on DEVICE_FAULT incident creation
+        if (request.getIncidentType() == IncidentType.DEVICE_FAULT) {
+            notificationService.dispatchIncidentNotifications(incident, device);
+        }
+
+        return toResponse(incident, false);
     }
 
     public IncidentResponse getIncidentById(Long incidentId) {
