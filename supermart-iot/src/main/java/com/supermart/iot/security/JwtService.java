@@ -49,6 +49,9 @@ public class JwtService {
      * @return a compact, signed JWT access token string
      */
     public String generateAccessToken(String email) {
+        if (email == null) {
+            throw new IllegalArgumentException("Email must not be null when generating an access token.");
+        }
         log.debug("Generating access token for email={}", email);
         return buildToken(email, Map.of("type", "access"), accessTokenExpirationMs);
     }

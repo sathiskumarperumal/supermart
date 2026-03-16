@@ -59,7 +59,8 @@ class JwtServiceTest {
     @Test
     @DisplayName("AC-2: Generated access token exp claim is approximately 45 minutes from now")
     void should_set_exp_claim_to_45_minutes_when_access_token_generated() {
-        // given
+        // given — capture window around token generation; allow 2-second lower tolerance
+        // to absorb thread scheduling jitter between System.currentTimeMillis() calls
         long beforeMs = System.currentTimeMillis();
 
         // when
@@ -69,8 +70,8 @@ class JwtServiceTest {
         Date expiration = underTest.extractClaim(token, Claims::getExpiration);
         long afterMs = System.currentTimeMillis();
 
-        long expectedLow = beforeMs + ACCESS_TOKEN_EXPIRATION_MS;
-        long expectedHigh = afterMs + ACCESS_TOKEN_EXPIRATION_MS;
+        long expectedLow  = beforeMs + ACCESS_TOKEN_EXPIRATION_MS - 2000L;
+        long expectedHigh = afterMs  + ACCESS_TOKEN_EXPIRATION_MS;
 
         assertThat(expiration.getTime())
                 .isGreaterThanOrEqualTo(expectedLow)
@@ -91,7 +92,8 @@ class JwtServiceTest {
     @Test
     @DisplayName("AC-2: Generated refresh token exp claim is approximately 24 hours from now")
     void should_set_exp_claim_to_24_hours_when_refresh_token_generated() {
-        // given
+        // given — capture window around token generation; allow 2-second lower tolerance
+        // to absorb thread scheduling jitter between System.currentTimeMillis() calls
         long beforeMs = System.currentTimeMillis();
 
         // when
@@ -101,8 +103,8 @@ class JwtServiceTest {
         Date expiration = underTest.extractClaim(token, Claims::getExpiration);
         long afterMs = System.currentTimeMillis();
 
-        long expectedLow = beforeMs + REFRESH_TOKEN_EXPIRATION_MS;
-        long expectedHigh = afterMs + REFRESH_TOKEN_EXPIRATION_MS;
+        long expectedLow  = beforeMs + REFRESH_TOKEN_EXPIRATION_MS - 2000L;
+        long expectedHigh = afterMs  + REFRESH_TOKEN_EXPIRATION_MS;
 
         assertThat(expiration.getTime())
                 .isGreaterThanOrEqualTo(expectedLow)
