@@ -23,6 +23,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+/**
+ * Spring Security configuration — stateless JWT-based REST API.
+ *
+ * <p>Configures a {@link SecurityFilterChain} with CSRF disabled, stateless
+ * session management, and per-request JWT validation via
+ * {@link JwtAuthenticationFilter}. Device-key authentication for IoT telemetry
+ * ingestion is handled by {@link DeviceKeyAuthFilter}.</p>
+ *
+ * <p>Public endpoints: {@code /auth/**}, {@code /h2-console/**},
+ * {@code /v3/api-docs/**}, {@code /swagger-ui/**}, {@code /actuator/**}.
+ * All other requests require a valid JWT Bearer token.</p>
+ *
+ * <p>CORS is delegated to {@link CorsConfig} via the
+ * {@link org.springframework.web.cors.CorsConfigurationSource} bean.</p>
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -37,6 +52,18 @@ public class SecurityConfig {
     private final DeviceKeyAuthFilter deviceKeyAuthFilter;
     private final UserRepository userRepository;
 
+    /**
+     * Configures the stateless JWT + device-key security filter chain.
+     *
+     * <p>CSRF is disabled (stateless API). Session creation policy is
+     * {@code STATELESS}. The {@link JwtAuthenticationFilter} is received as a
+     * method parameter to avoid a circular-bean dependency.</p>
+     *
+     * @param http          the {@link HttpSecurity} builder provided by Spring Security
+     * @param jwtAuthFilter the JWT authentication filter bean (method-param injection)
+     * @return the configured {@link SecurityFilterChain}
+     * @throws Exception if the security configuration cannot be built
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
                                                     JwtAuthenticationFilter jwtAuthFilter) throws Exception {
@@ -59,6 +86,13 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /**
+     * Provides a {@link UserDetailsService} that loads users by email from the database.
+     *
+     * @return a {@link UserDetailsService} backed by {@link UserRepository}
+     * @throws org.springframework.security.core.userdetails.UsernameNotFoundException
+     *         if no user is found with the given email
+     */
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> userRepository.findByEmail(email)
@@ -70,6 +104,12 @@ public class SecurityConfig {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 
+    /**
+     * Creates a DAO-backed {@link AuthenticationProvider} using BCrypt password
+     * encoding and the {@link UserDetailsService} defined in this configuration.
+     *
+     * @return a configured {@link AuthenticationProvider}
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -78,11 +118,24 @@ public class SecurityConfig {
         return provider;
     }
 
+    /**
+     * Exposes the {@link AuthenticationManager} from Spring Security's
+     * {@link AuthenticationConfiguration}.
+     *
+     * @param config the Spring Security authentication configuration
+     * @return the global {@link AuthenticationManager}
+     * @throws Exception if the manager cannot be retrieved
+     */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * Creates a BCrypt {@link PasswordEncoder} for secure password hashing.
+     *
+     * @return a {@link BCryptPasswordEncoder} instance
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
