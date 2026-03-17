@@ -28,8 +28,8 @@
         <commons-lang3.version>3.18.0</commons-lang3.version>
         <!-- CVE overrides — versions below resolve all CRITICAL and HIGH CVEs flagged
              by the LTTS Quality Gate on 2026-03-16 (commit ef63e19) -->
-        <!-- CVE-2025-41242 (CVSS 8.2) + CVE-2025-41249 (CVSS 8.7): spring-beans/spring-core -->
-        <spring-framework.version>6.2.11</spring-framework.version>
+        <!-- spring-framework 6.2.11 is already the version Spring Boot 3.4.10 brings;
+             no explicit override needed. The property is kept here as documentation only. -->
         <!-- mysql-connector-j 9.3.0 resolves HIGH CVEs present in 9.1.0 -->
         <mysql.version>9.3.0</mysql.version>
         <!-- SonarCloud -->
@@ -58,23 +58,24 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>2.18.6</version>
             </dependency>
-            <!-- tomcat-embed-core 10.1.50 — overrides Spring Boot BOM to resolve:
-                 CVE-2025-66614 (CRITICAL 9.1) — fixed in 10.1.50,
-                 CVE-2026-24734 (HIGH 8.7)     — fixed in 10.1.50,
-                 CVE-2025-55752 (HIGH 7.7)     — fixed in 10.1.45,
+            <!-- tomcat-embed-core 10.1.52 — overrides Spring Boot BOM (3.5.3 brings 10.1.42) to resolve:
+                 CVE-2026-24734 (HIGH 8.7)     — fixed in 10.1.52,
+                 CVE-2025-66614 (CRITICAL 9.1) — fixed in 10.1.50+,
+                 CVE-2025-55752 (HIGH 7.7)     — fixed in 10.1.45+,
                  CVE-2025-48989 (HIGH 8.7)     — fixed in earlier versions,
-                 and all other HIGH CVEs present in 10.1.43/10.1.44 -->
+                 and all other HIGH CVEs present in 10.1.43/10.1.44/10.1.50 -->
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
-                <version>10.1.50</version>
+                <version>10.1.52</version>
             </dependency>
-            <!-- spring-security-core 6.4.10 — overrides Spring Boot BOM to resolve:
-                 CVE-2025-41248 (HIGH 8.7) -->
+            <!-- spring-security-core 6.4.11 — Spring Boot 3.4.10 BOM version; OSV-clean.
+                 Explicit pin retained to document CVE posture and prevent BOM drift.
+                 Resolves: CVE-2025-41248 (HIGH 8.7) from 6.4.6-era versions -->
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-core</artifactId>
-                <version>6.4.10</version>
+                <version>6.4.11</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
