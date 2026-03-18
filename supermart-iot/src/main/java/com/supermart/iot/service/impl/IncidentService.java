@@ -20,11 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class IncidentService {
+
+    /** Shared suffix used in all resource-not-found exception messages. */
+    private static final String NOT_FOUND_SUFFIX = " not found.";
 
     private final IncidentRepository incidentRepository;
     private final IotDeviceRepository deviceRepository;
@@ -43,7 +45,7 @@ public class IncidentService {
     public IncidentResponse createIncident(CreateIncidentRequest request) {
         IotDevice device = deviceRepository.findById(request.getDeviceId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "IoT device with id " + request.getDeviceId() + " not found."));
+                        "IoT device with id " + request.getDeviceId() + NOT_FOUND_SUFFIX));
 
         Optional<Incident> existing = incidentRepository.findByDevice_DeviceIdAndStatus(
                 device.getDeviceId(), IncidentStatus.OPEN);
@@ -89,7 +91,7 @@ public class IncidentService {
 
         Technician technician = technicianRepository.findById(request.getTechnicianId())
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Technician with id " + request.getTechnicianId() + " not found."));
+                        "Technician with id " + request.getTechnicianId() + NOT_FOUND_SUFFIX));
 
         TechnicianAssignment assignment = TechnicianAssignment.builder()
                 .incident(incident)
@@ -114,7 +116,7 @@ public class IncidentService {
     private Incident findOrThrow(Long incidentId) {
         return incidentRepository.findById(incidentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "Incident with id " + incidentId + " not found."));
+                        "Incident with id " + incidentId + NOT_FOUND_SUFFIX));
     }
 
     public IncidentResponse toResponse(Incident incident, boolean includeAssignments) {
@@ -122,7 +124,7 @@ public class IncidentService {
         if (includeAssignments && incident.getAssignments() != null) {
             assignments = incident.getAssignments().stream()
                     .map(a -> toAssignmentResponse(a, incident.getIncidentId()))
-                    .collect(Collectors.toList());
+                    .toList();
         }
         return IncidentResponse.builder()
                 .incidentId(incident.getIncidentId())
