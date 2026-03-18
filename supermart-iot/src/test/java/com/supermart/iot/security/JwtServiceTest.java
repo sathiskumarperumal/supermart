@@ -17,11 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Unit tests for {@link JwtService} covering SCRUM-3 JWT expiration change.
+ * Unit tests for {@link JwtService} covering SCRUM-62 JWT expiration change.
  *
- * <p>Verifies that the access token expiration is set to 45 minutes (2700000 ms),
- * that the {@code exp} claim in generated tokens reflects the new duration, and
- * that existing token validation workflows continue to function correctly.</p>
+ * <p>Verifies that the access token expiration is set to 60 minutes (3600000 ms),
+ * that the {@code exp} claim in generated tokens reflects the updated duration, and
+ * that existing token validation workflows continue to function correctly.
+ * Supersedes SCRUM-3 (45-minute / 2700000 ms tests).</p>
  */
 @ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
@@ -30,7 +31,7 @@ class JwtServiceTest {
 
     private static final String TEST_SECRET =
             "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
-    private static final long ACCESS_TOKEN_EXPIRATION_MS = 2700000L; // 45 minutes
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 3600000L; // 60 minutes (SCRUM-62)
     private static final long REFRESH_TOKEN_EXPIRATION_MS = 86400000L; // 24 hours
     private static final String TEST_EMAIL = "user@supermart.com";
 
@@ -42,23 +43,23 @@ class JwtServiceTest {
         ReflectionTestUtils.setField(underTest, "refreshTokenExpirationMs", REFRESH_TOKEN_EXPIRATION_MS);
     }
 
-    // ─── AC-1: JWT expiration time set to 45 minutes ──────────────────────────
+    // ─── AC-1: JWT expiration time set to 60 minutes ──────────────────────────
 
     @Test
-    @DisplayName("AC-1: getAccessTokenExpirationMs returns 2700000 ms (45 minutes)")
-    void should_return_2700000ms_when_getAccessTokenExpirationMs_called() {
+    @DisplayName("AC-1: getAccessTokenExpirationMs returns 3600000 ms (60 minutes) per SCRUM-62")
+    void should_return_3600000ms_when_getAccessTokenExpirationMs_called() {
         // when
         long result = underTest.getAccessTokenExpirationMs();
 
         // then
-        assertThat(result).isEqualTo(2700000L);
+        assertThat(result).isEqualTo(3600000L);
     }
 
     // ─── AC-2: New tokens reflect updated expiration claim (exp) ──────────────
 
     @Test
-    @DisplayName("AC-2: Generated access token exp claim is approximately 45 minutes from now")
-    void should_set_exp_claim_to_45_minutes_when_access_token_generated() {
+    @DisplayName("AC-2: Generated access token exp claim is approximately 60 minutes from now")
+    void should_set_exp_claim_to_60_minutes_when_access_token_generated() {
         // given — capture window around token generation; allow 2-second lower tolerance
         // to absorb thread scheduling jitter between System.currentTimeMillis() calls
         long beforeMs = System.currentTimeMillis();
