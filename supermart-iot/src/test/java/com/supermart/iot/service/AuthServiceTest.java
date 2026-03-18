@@ -27,10 +27,11 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link AuthService} verifying the authentication workflows
- * following the SCRUM-3 JWT expiration update to 45 minutes.
+ * following the SCRUM-62 JWT expiration update to 60 minutes.
  *
  * <p>Covers login, token refresh, and error paths to confirm that existing
- * workflows are not disrupted by the expiration change (AC-3 and AC-4).</p>
+ * workflows are not disrupted by the expiration change (AC-3 and AC-4).
+ * Supersedes SCRUM-3 (45-minute / 2700-second tests).</p>
  */
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -51,8 +52,8 @@ class AuthServiceTest {
     private static final String TEST_PASSWORD = "secret";
     private static final String ACCESS_TOKEN = "access.token.value";
     private static final String REFRESH_TOKEN = "refresh.token.value";
-    // 2700 seconds = 45 minutes (SCRUM-3)
-    private static final long ACCESS_TOKEN_EXPIRATION_MS = 2700000L;
+    // 3600 seconds = 60 minutes (SCRUM-62)
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 3600000L;
 
     // ─── AC-3 / AC-4: Login workflow functions correctly ──────────────────────
 
@@ -80,8 +81,8 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("AC-4: login returns expiresIn of 2700 seconds (45 minutes) per SCRUM-3")
-    void should_return_expiresIn_2700_seconds_when_login_successful() {
+    @DisplayName("AC-4: login returns expiresIn of 3600 seconds (60 minutes) per SCRUM-62")
+    void should_return_expiresIn_3600_seconds_when_login_successful() {
         // given
         LoginRequest request = new LoginRequest(TEST_EMAIL, TEST_PASSWORD);
         UserDetails userDetails = buildUserDetails(TEST_EMAIL);
@@ -95,7 +96,7 @@ class AuthServiceTest {
         LoginResponse result = underTest.login(request);
 
         // then
-        assertThat(result.getExpiresIn()).isEqualTo(2700L);
+        assertThat(result.getExpiresIn()).isEqualTo(3600L);
     }
 
     @Test
@@ -134,7 +135,7 @@ class AuthServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getAccessToken()).isEqualTo(ACCESS_TOKEN);
-        assertThat(result.getExpiresIn()).isEqualTo(2700L);
+        assertThat(result.getExpiresIn()).isEqualTo(3600L);
     }
 
     @Test

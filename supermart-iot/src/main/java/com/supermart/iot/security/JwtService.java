@@ -18,8 +18,8 @@ import java.util.function.Function;
  *
  * <p>Tokens are signed using HMAC-SHA and the expiration durations are
  * externally configured via {@code app.jwt.*} properties to avoid hardcoded
- * values. Access token expiration is set to 45 minutes per OWASP A07 and A05
- * recommendations (SCRUM-3).</p>
+ * values. Access token expiration is set to 60 minutes per OWASP A07 and A05
+ * recommendations (SCRUM-62). Supersedes the 45-minute value set by SCRUM-3.</p>
  */
 @Service
 @Slf4j
@@ -30,7 +30,8 @@ public class JwtService {
 
     /**
      * Access token lifetime in milliseconds.
-     * Configured to 2700000 ms (45 minutes) per SCRUM-3 security requirement.
+     * Configured to 3600000 ms (60 minutes) per SCRUM-62 security requirement.
+     * Supersedes the 45-minute (2700000 ms) value set by SCRUM-3.
      */
     @Value("${app.jwt.access-token-expiration-ms}")
     private long accessTokenExpirationMs;
@@ -43,10 +44,11 @@ public class JwtService {
      *
      * <p>The token includes a {@code type=access} claim and expires after
      * the duration configured in {@code app.jwt.access-token-expiration-ms}
-     * (currently 45 minutes / 2700000 ms).</p>
+     * (currently 60 minutes / 3600000 ms, per SCRUM-62).</p>
      *
      * @param email the authenticated user's email address used as the JWT subject
      * @return a compact, signed JWT access token string
+     * @throws IllegalArgumentException if email is null
      */
     public String generateAccessToken(String email) {
         if (email == null) {
@@ -177,7 +179,7 @@ public class JwtService {
      * <p>Used by {@code AuthService} to populate the {@code expiresIn} field
      * of the login response (converted to seconds by the caller).</p>
      *
-     * @return access token lifetime in milliseconds (currently 2700000 ms / 45 minutes)
+     * @return access token lifetime in milliseconds (currently 3600000 ms / 60 minutes per SCRUM-62)
      */
     public long getAccessTokenExpirationMs() {
         return accessTokenExpirationMs;

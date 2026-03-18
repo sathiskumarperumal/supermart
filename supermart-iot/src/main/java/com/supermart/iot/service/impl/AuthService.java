@@ -17,7 +17,8 @@ import org.springframework.stereotype.Service;
  *
  * <p>Delegates credential validation to {@link AuthenticationManager} and
  * JWT token lifecycle management to {@link JwtService}. Access tokens issued
- * by this service expire after 45 minutes per SCRUM-3 security requirement.</p>
+ * by this service expire after 60 minutes per SCRUM-62 security requirement
+ * (supersedes the 45-minute value set by SCRUM-3).</p>
  */
 @Service
 @RequiredArgsConstructor
@@ -33,7 +34,7 @@ public class AuthService {
      *
      * <p>Delegates credential verification to Spring Security's
      * {@link AuthenticationManager}. On success, a new access token (valid for
-     * 45 minutes) and refresh token are generated and returned.</p>
+     * 60 minutes per SCRUM-62) and refresh token are generated and returned.</p>
      *
      * @param request the login request containing the user's email and password
      * @return a {@link LoginResponse} containing the access token, refresh token,
@@ -56,7 +57,7 @@ public class AuthService {
      *
      * <p>Extracts the subject email from the refresh token, reloads the user,
      * validates the token, and generates a fresh access/refresh token pair.
-     * The new access token expires after 45 minutes per SCRUM-3.</p>
+     * The new access token expires after 60 minutes per SCRUM-62.</p>
      *
      * @param request the refresh request containing the unexpired refresh token
      * @return a {@link LoginResponse} containing newly issued access and refresh tokens
