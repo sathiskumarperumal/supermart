@@ -38,6 +38,13 @@ public class IotDevice {
     @Column(name = "last_seen_at")
     private LocalDateTime lastSeenAt;
 
+    /**
+     * Timestamp at which this device was soft-deleted (decommissioned).
+     * Null for all non-decommissioned devices.
+     */
+    @Column(name = "decommissioned_at")
+    private LocalDateTime decommissionedAt;
+
     @OneToMany(mappedBy = "device", fetch = FetchType.LAZY)
     private List<TelemetryRecord> telemetryRecords;
 
