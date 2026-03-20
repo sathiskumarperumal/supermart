@@ -12,6 +12,8 @@ import com.supermart.iot.enums.DeviceStatus;
 import com.supermart.iot.enums.EquipmentType;
 import com.supermart.iot.exception.BadRequestException;
 import com.supermart.iot.exception.ResourceNotFoundException;
+import com.supermart.iot.repository.DeviceDecommissionAuditRepository;
+import com.supermart.iot.repository.IncidentRepository;
 import com.supermart.iot.repository.IotDeviceRepository;
 import com.supermart.iot.repository.TelemetryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +34,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -49,6 +52,12 @@ class DeviceServiceTest {
 
     @Mock
     private TelemetryRepository telemetryRepository;
+
+    @Mock
+    private IncidentRepository incidentRepository;
+
+    @Mock
+    private DeviceDecommissionAuditRepository auditRepository;
 
     @InjectMocks
     private DeviceService underTest;
@@ -102,12 +111,12 @@ class DeviceServiceTest {
     void should_return_paged_device_summaries_when_devices_found() {
         // given
         Page<IotDevice> page = new PageImpl<>(List.of(device));
-        when(deviceRepository.findByStoreIdAndStatus(any(), any(), any(Pageable.class))).thenReturn(page);
+        when(deviceRepository.findByStoreIdAndStatus(any(), any(), anyBoolean(), any(Pageable.class))).thenReturn(page);
         when(telemetryRepository.findTopByDevice_DeviceIdOrderByRecordedAtDesc(9001L))
                 .thenReturn(Optional.of(telemetryRecord));
 
         // when
-        PagedResponse<IotDeviceSummaryResponse> result = underTest.listDevices(null, null, 0, 20);
+        PagedResponse<IotDeviceSummaryResponse> result = underTest.listDevices(null, null, false, 0, 20);
 
         // then
         assertThat(result).isNotNull();
@@ -121,12 +130,12 @@ class DeviceServiceTest {
     void should_return_is_alert_false_when_no_telemetry_record_found() {
         // given
         Page<IotDevice> page = new PageImpl<>(List.of(device));
-        when(deviceRepository.findByStoreIdAndStatus(any(), any(), any(Pageable.class))).thenReturn(page);
+        when(deviceRepository.findByStoreIdAndStatus(any(), any(), anyBoolean(), any(Pageable.class))).thenReturn(page);
         when(telemetryRepository.findTopByDevice_DeviceIdOrderByRecordedAtDesc(9001L))
                 .thenReturn(Optional.empty());
 
         // when
-        PagedResponse<IotDeviceSummaryResponse> result = underTest.listDevices(1001L, DeviceStatus.ACTIVE, 0, 20);
+        PagedResponse<IotDeviceSummaryResponse> result = underTest.listDevices(1001L, DeviceStatus.ACTIVE, false, 0, 20);
 
         // then
         assertThat(result.getContent().get(0).getIsAlert()).isFalse();

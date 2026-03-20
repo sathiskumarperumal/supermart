@@ -79,7 +79,7 @@ class DeviceControllerTest {
                 .size(20)
                 .build();
 
-        when(deviceService.listDevices(any(), any(), eq(0), eq(20))).thenReturn(paged);
+        when(deviceService.listDevices(any(), any(), eq(false), eq(0), eq(20))).thenReturn(paged);
 
         // when / then
         mockMvc.perform(get(BASE_URL).contentType(MediaType.APPLICATION_JSON))
