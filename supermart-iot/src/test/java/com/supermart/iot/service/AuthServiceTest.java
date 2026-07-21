@@ -27,7 +27,8 @@ import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link AuthService} verifying the authentication workflows
- * following the SCRUM-3 JWT expiration update to 45 minutes.
+ * following the SCRUM-65 JWT expiration update to 30 minutes (previously
+ * 45 minutes per SCRUM-3).
  *
  * <p>Covers login, token refresh, and error paths to confirm that existing
  * workflows are not disrupted by the expiration change (AC-3 and AC-4).</p>
@@ -51,8 +52,8 @@ class AuthServiceTest {
     private static final String TEST_PASSWORD = "secret";
     private static final String ACCESS_TOKEN = "access.token.value";
     private static final String REFRESH_TOKEN = "refresh.token.value";
-    // 2700 seconds = 45 minutes (SCRUM-3)
-    private static final long ACCESS_TOKEN_EXPIRATION_MS = 2700000L;
+    // 1800 seconds = 30 minutes (SCRUM-65, previously 2700s / 45min per SCRUM-3)
+    private static final long ACCESS_TOKEN_EXPIRATION_MS = 1800000L;
 
     // ─── AC-3 / AC-4: Login workflow functions correctly ──────────────────────
 
@@ -80,8 +81,8 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("AC-4: login returns expiresIn of 2700 seconds (45 minutes) per SCRUM-3")
-    void should_return_expiresIn_2700_seconds_when_login_successful() {
+    @DisplayName("AC-4: login returns expiresIn of 1800 seconds (30 minutes) per SCRUM-65")
+    void should_return_expiresIn_1800_seconds_when_login_successful() {
         // given
         LoginRequest request = new LoginRequest(TEST_EMAIL, TEST_PASSWORD);
         UserDetails userDetails = buildUserDetails(TEST_EMAIL);
@@ -95,7 +96,7 @@ class AuthServiceTest {
         LoginResponse result = underTest.login(request);
 
         // then
-        assertThat(result.getExpiresIn()).isEqualTo(2700L);
+        assertThat(result.getExpiresIn()).isEqualTo(1800L);
     }
 
     @Test
@@ -134,7 +135,7 @@ class AuthServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getAccessToken()).isEqualTo(ACCESS_TOKEN);
-        assertThat(result.getExpiresIn()).isEqualTo(2700L);
+        assertThat(result.getExpiresIn()).isEqualTo(1800L);
     }
 
     @Test
