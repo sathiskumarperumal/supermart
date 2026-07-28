@@ -26,13 +26,7 @@
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok.version>1.18.30</lombok.version>
         <commons-lang3.version>3.18.0</commons-lang3.version>
-        <!-- CVE overrides — versions below resolve all CRITICAL and HIGH CVEs flagged
-             by the LTTS Quality Gate on 2026-03-16 (commit ef63e19) -->
-        <!-- spring-framework 6.2.11 is already the version Spring Boot 3.4.10 brings;
-             no explicit override needed. The property is kept here as documentation only. -->
-        <!-- mysql-connector-j 9.3.0 resolves HIGH CVEs present in 9.1.0 -->
         <mysql.version>9.3.0</mysql.version>
-        <!-- SonarCloud -->
         <sonar.projectKey>sathiskumarperumal_supermart</sonar.projectKey>
         <sonar.organization>sathiskumarperumal</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -41,8 +35,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- jackson-core 2.18.6 — overrides Spring Boot BOM (2.18.4) to resolve
-                 jackson-core CVE present in 2.18.2/2.18.4 -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
@@ -58,20 +50,11 @@
                 <artifactId>jackson-annotations</artifactId>
                 <version>2.18.6</version>
             </dependency>
-            <!-- tomcat-embed-core 10.1.52 — overrides Spring Boot BOM (3.5.3 brings 10.1.42) to resolve:
-                 CVE-2026-24734 (HIGH 8.7)     — fixed in 10.1.52,
-                 CVE-2025-66614 (CRITICAL 9.1) — fixed in 10.1.50+,
-                 CVE-2025-55752 (HIGH 7.7)     — fixed in 10.1.45+,
-                 CVE-2025-48989 (HIGH 8.7)     — fixed in earlier versions,
-                 and all other HIGH CVEs present in 10.1.43/10.1.44/10.1.50 -->
             <dependency>
                 <groupId>org.apache.tomcat.embed</groupId>
                 <artifactId>tomcat-embed-core</artifactId>
                 <version>10.1.52</version>
             </dependency>
-            <!-- spring-security-core 6.4.11 — Spring Boot 3.4.10 BOM version; OSV-clean.
-                 Explicit pin retained to document CVE posture and prevent BOM drift.
-                 Resolves: CVE-2025-41248 (HIGH 8.7) from 6.4.6-era versions -->
             <dependency>
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-core</artifactId>
@@ -81,7 +64,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -108,23 +90,16 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-
-        <!-- Database – H2 (local dev / unit tests, embedded, no Docker needed) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- Database – MySQL Connector — pinned to 9.3.0 via <mysql.version> property
-             to resolve HIGH CVEs present in 9.1.0 (Docker/production profile) -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
@@ -142,37 +117,27 @@
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
-
-        <!-- Commons Lang3 — pinned to 3.18.0 to resolve CVE-2025-48924 (CVSS 8.8) -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${commons-lang3.version}</version>
         </dependency>
-
-        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <optional>true</optional>
         </dependency>
-
-        <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
-
-        <!-- Springdoc OpenAPI (Swagger UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.3.0</version>
         </dependency>
-
-        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -237,6 +202,26 @@
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <version>3.11.0.3922</version>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>12.2.2</version>
+                <configuration>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                    <formats>
+                        <format>HTML</format>
+                        <format>XML</format>
+                    </formats>
+                    <nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
