@@ -7,7 +7,8 @@ import lombok.*;
  *
  * <p>Contains the issued access token, refresh token, token type ({@code Bearer}),
  * and the access token's lifetime in seconds. The {@code expiresIn} value reflects
- * the 45-minute expiry introduced by SCRUM-3 (2700 seconds).</p>
+ * the 30-minute expiry introduced by SCRUM-67 (1800 seconds), reduced from the
+ * previous 45-minute expiry (2700 seconds) set under SCRUM-3.</p>
  */
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class LoginResponse {
@@ -20,7 +21,7 @@ public class LoginResponse {
 
     /**
      * Access token lifetime in seconds.
-     * Set to 2700 (45 minutes) per SCRUM-3 security requirement.
+     * Set to 1800 (30 minutes) per SCRUM-67 security requirement.
      */
     private long expiresIn;
 
