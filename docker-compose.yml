@@ -83,9 +83,14 @@ services:
 
       # ── JWT ────────────────────────────────────────────────────────────────
       # IMPORTANT: replace with a strong random secret in production
+      # SCRUM-67: env var name corrected to APP_JWT_EXPIRY_MS to match the
+      #           ${APP_JWT_EXPIRY_MS:...} binding read by application.properties
+      #           (previously APP_JWT_ACCESS_TOKEN_EXPIRATION_MS, which did not
+      #           match any @Value placeholder and was silently ignored).
+      #           Value set to 1800000 ms (30 minutes) per SCRUM-67.
       APP_JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-      APP_JWT_ACCESS_TOKEN_EXPIRATION_MS:  3600000    # 1 hour
-      APP_JWT_REFRESH_TOKEN_EXPIRATION_MS: 86400000   # 24 hours
+      APP_JWT_EXPIRY_MS:  1800000    # 30 minutes
+      APP_JWT_REFRESH_EXPIRY_MS: 86400000   # 24 hours
 
       # ── Telemetry ──────────────────────────────────────────────────────────
       APP_TELEMETRY_RATE_LIMIT_PER_MINUTE: 2

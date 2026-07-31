@@ -100,6 +100,8 @@ Content-Type: application/json
 ```
 
 Returns `accessToken` — pass as `Authorization: Bearer <token>` on all subsequent requests.
+Access tokens expire after **30 minutes** (SCRUM-67); use `/api/auth/refresh` with the
+issued `refreshToken` to obtain a new token pair without re-authenticating.
 
 ### IoT Devices (API Key)
 
@@ -178,8 +180,8 @@ The app seeds the following on startup (H2 / `data.sql`):
 Key properties in `application.properties`:
 
 ```properties
-app.jwt.secret=...                          # Base64 HMAC-SHA key
-app.jwt.access-token-expiration-ms=3600000  # 1 hour
+app.jwt.secret=...                           # Base64 HMAC-SHA key
+app.jwt.access-token-expiration-ms=1800000   # 30 minutes (SCRUM-67; was 45 min under SCRUM-3)
 app.jwt.refresh-token-expiration-ms=86400000 # 24 hours
 app.telemetry.rate-limit-per-minute=2
 ```
